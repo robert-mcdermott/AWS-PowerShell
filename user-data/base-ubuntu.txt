@@ -1,2 +1,11 @@
 #!/bin/bash
-echo "test test test" > /itworks.txt
+/bin/echo "blimp01" > /etc/hostname
+/usr/bin/wget https://raw.githubusercontent.com/robert-mcdermott/AWS-PowerShell/master/files/99-fhcrc-banner --output-document=/etc/update-motd.d/99-fhcrc-banner
+/bin/chmod 755 /etc/update-motd.d/99-fhcrc-banner
+/bin/echo "root:$Password" | chpasswd
+/bin/sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+/bin/sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+/usr/sbin/service ssh restart
+/usr/bin/apt-get -y update
+/usr/bin/apt-get -y install dstat
+/usr/bin/apt-get -y upgrade
