@@ -1,0 +1,17 @@
+#!/bin/bash
+echo "
+Welcome to the Fred Hutchinson Cancer Research Center
+
+                          ***  Warning  ***
+
+This system is for the exclusive use of authorized Fred Hutchinson Cancer
+Research Center (FHCRC) employees and associates.  Anyone using this system
+is subject to having all of their activities on this system monitored and
+recorded by system administration staff.
+
+Anyone using this system expressly consents to such monitoring and is
+advised that if such monitoring reveals possible evidence of criminal
+activity, system administration staff may provide the evidence from such
+monitoring to law enforcement officials.
+
+"
