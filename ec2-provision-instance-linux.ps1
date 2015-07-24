@@ -92,6 +92,7 @@ Write-Host "Selected Ubuntu 14.04 AMI: $ImageID"
 # Userdata script to configure servers
 $UserData = (Invoke-WebRequest -Uri https://raw.githubusercontent.com/robert-mcdermott/AWS-PowerShell/master/user-data/base-ubuntu.txt).content
 $UserData = $UserData -replace "<password>","$Password"
+$UserData = $UserData -replace "<hostname>","$Name"
 # The user-data needs to be Base64 encoded
 $UserData = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($UserData))
 

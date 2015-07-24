@@ -1,5 +1,5 @@
 #!/bin/bash
-/bin/echo "blimp01" > /etc/hostname
+/bin/echo "<hostname>" > /etc/hostname
 /usr/bin/wget https://raw.githubusercontent.com/robert-mcdermott/AWS-PowerShell/master/files/99-fhcrc-banner --output-document=/etc/update-motd.d/99-fhcrc-banner
 /bin/chmod 755 /etc/update-motd.d/99-fhcrc-banner
 /bin/echo "root:<password>" | chpasswd
