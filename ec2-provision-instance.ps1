@@ -1,4 +1,4 @@
-Param(
+﻿Param(
     [string]$Region = "us-west-2",
     [string]$AvailibilityZone = "us-west-2a",
     [string]$Vpc = "vpc-f3e23496",
@@ -7,6 +7,7 @@ Param(
     [array]$SecurityGroupIds = "sg-9e3a7cfb",
     [Parameter(Mandatory=$true)]
     [String]$Name,
+    #[string]$Name = "auto_$([int](Get-Date -UFormat "%s"))",
     [string]$KeyName = "$Name.pem",
     [string]$AmiName = "WINDOWS_2012R2_BASE",
     [Parameter(Mandatory=$true)]
@@ -14,8 +15,10 @@ Param(
     #[string]$Owner = "_adm/solarch",
     [Parameter(Mandatory=$true)]
     [string]$TechContact,
+    #[string]$TechContact = "rmcdermo@fredhutch.org,
     [Parameter(Mandatory=$true)]
     [string]$BillingContact,
+    #[string]$BillingContact = "cloudops@fredhutch.org",
     [string]$Description = "Provisioned by $([Environment]::UserDomainName)\$([Environment]::UserName) On: $(Get-Date)",
     [string]$BusinessHours = "?",
     [string]$GrantCritical = "?",
@@ -32,8 +35,8 @@ Param(
     [string]$DataVolEncrypted = "false",
     [string]$DataVolType = "gp2", #'gp2' for GP SSD, 'io1' for provisioned iops (also requires -Iops parameter), "standard" for magenetic disks
     [string]$RegisterDNS = "false",
-    [string]$AlertsEnabled = "false"
-     
+    [string]$AlertsEnabled = "false",
+    [DateTime]$RetirementDate = "2999-01-01"
 )
 
 
@@ -170,6 +173,15 @@ If ($DailySnapshotRetention -gt 0){
     $BackupTag.Key = "backup_enabled"
     $BackupTag.Value = $DailySnapshotRetention
     New-EC2Tag -Resources $Instance.InstanceID -Tag $BackupTag -Region $region
+}
+
+# Tag the instance with it's retirement date if specified
+if ($RetirementDate -ne [DateTime]"2999-01-01"){
+    Write-Host "Scheduling Instance to automatically retire on: $RetirementDate" -ForegroundColor Magenta
+    $RetirementTag = New-Object Amazon.EC2.Model.Tag
+    $RetirementTag.Key = "retirement_date"
+    $RetirementTag.Value = $RetirementDate
+    New-EC2Tag -Resources $Instance.InstanceID -Tag $RetirementTag -Region $region
 }
 # Done Tagging instance 
 

@@ -34,7 +34,8 @@
     [string]$DataVolEncrypted = "false",
     [string]$DataVolType = "gp2", #'gp2' for GP SSD, 'io1' for provisioned iops (also requires -Iops parameter), "standard" for magenetic disks
     [string]$RegisterDNS = "true",
-    [string]$AlertsEnabled = "false"
+    [string]$AlertsEnabled = "false",
+    [DateTime]$RetirementDate = "2999-01-01"
      
 )
 
@@ -158,6 +159,15 @@ If ($DailySnapshotRetention -gt 0){
     $BackupTag.Key = "backup_enabled"
     $BackupTag.Value = $DailySnapshotRetention
     New-EC2Tag -Resources $Instance.InstanceID -Tag $BackupTag -Region $region
+}
+
+# Tag the instance with it's retirement date if specified
+if ($RetirementDate -ne [DateTime]"2999-01-01"){
+    Write-Host "Scheduling Instance to automatically retire on: $RetirementDate" -ForegroundColor Magenta
+    $RetirementTag = New-Object Amazon.EC2.Model.Tag
+    $RetirementTag.Key = "retirement_date"
+    $RetirementTag.Value = $RetirementDate
+    New-EC2Tag -Resources $Instance.InstanceID -Tag $RetirementTag -Region $region
 }
 # Done Tagging instance 
 
