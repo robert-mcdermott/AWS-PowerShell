@@ -275,9 +275,9 @@
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "VpcId" : { "Ref" : "VPC" },
-        "GroupDescription" : "Enable SSH access via port 22",
+        "GroupDescription" : "Enable SSH access via port 22 from the Hutch only",
         "SecurityGroupIngress" : [
-          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"}},
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "140.107.0.0/16"}},
           { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0"}
          ]
       }
