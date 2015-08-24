@@ -229,7 +229,7 @@ Grant-EC2SecurityGroupIngress -Region $Region -GroupId $PrivSGID -IpPermission $
 Start-sleep -Seconds 5
 $NameTag = New-Object Amazon.EC2.Model.Tag
 $NameTag.Key = "Name"
-$NameTag.Value = "$VPCName Public SG"
+$NameTag.Value = "$VPCName Private SG"
 New-EC2Tag -Resources $PrivSGID -Tag $NameTag -Region $Region
 Start-Sleep -Seconds 15
 
