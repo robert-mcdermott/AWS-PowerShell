@@ -34,6 +34,21 @@
 	                      "VolumeType":"gp2"}
 	          }]  
       }
+    },
+    "DNSRecords" : {
+      "Type" : "AWS::Route53::RecordSetGroup",
+      "Properties" : {
+        "HostedZoneName" : "fredhutch.center.",
+        "Comment" : "Domain records for my test server.",
+        "RecordSets" : [ 
+          {
+            "Name" : "myserver05.fredhutch.center.",
+            "Type" : "A",
+            "TTL" : "60",
+            "ResourceRecords" : [ { "Fn::GetAtt" : [ "WebServer", "PrivateIp" ]} ]
+          }
+        ]
+      }
     }
   }
   }
