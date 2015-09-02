@@ -9,7 +9,8 @@
                 "VpcId": "vpc-f3e23496",
                 "GroupDescription": "Enable HTTP access to our webserver",
                 "SecurityGroupIngress": [ { "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "CidrIp": "0.0.0.0/0" },
-                                          { "IpProtocol": "tcp", "FromPort": 3389, "ToPort": 3389, "CidrIp": "140.107.0.0/16" }
+                                          { "IpProtocol": "tcp", "FromPort": 3389, "ToPort": 3389, "CidrIp": "140.107.0.0/16" },
+                                          { "IpProtocol": "icmp", "FromPort": -1, "ToPort": -1, "CidrIp": "140.107.0.0/16" }
                                      
                 ]
             }
@@ -51,12 +52,13 @@
                     {
                         "DeviceName": "/dev/xvdf",
                         "Ebs": {
-                            "VolumeSize": "50",
+                            "VolumeSize": "100",
                             "VolumeType": "gp2",
                             "DeleteOnTermination": "false"
                         }
                     }
                 ],
+
 
                 "UserData": {
                     "Fn::Base64": {
@@ -91,6 +93,8 @@
 
                 }
 
+
+
             }
         },
 
@@ -114,6 +118,7 @@
                 "InsufficientDataActions": ["arn:aws:sns:us-west-2:458818213009:US-WEST-2_EC2"]
           }
     },
+
 
 
         "DNSRecords": {
