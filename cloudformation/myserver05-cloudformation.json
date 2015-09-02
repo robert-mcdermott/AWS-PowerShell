@@ -1,0 +1,36 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "myserver05",
+  "Resources" : {
+    "WebServer": {
+      "Type": "AWS::EC2::Instance",  
+      "Properties": {
+      
+        "Tags" : [
+            {"Key" : "Name", "Value" : "myserver05"},
+            {"Key" : "owner", "Value" : "_adm/solarch"},
+            {"Key" : "technical_contact", "Value" : "rmcdermo@fredhutch.org"},
+            {"Key" : "billing_contact", "Value" : "cloudops@fredhutch.org"},
+            {"Key" : "description", "Value" : "Demo Windows 2012R2 IIS Webserver"},
+            {"Key" : "sle", "Value" : "business_hours=8x5 / phi=no / pii=no / grant_critical=no / publicly_accessible=no"}
+        ],
+        "ImageId"            : "ami-4dbcb67d",
+        "InstanceType"       : "t2.small",
+        "KeyName"            : "rmcdermo-fredhutch_key",
+        "NetworkInterfaces" : [{
+          "AssociatePublicIpAddress" : "false",
+          "DeviceIndex"              : "0",
+          "DeleteOnTermination"      : "true",
+          "SubnetId"                 : "subnet-ae8555d9",
+          "GroupSet"                 : [ "sg-9e3a7cfb" ]
+        }],
+        "BlockDeviceMappings" : [{
+	            "DeviceName" : "/dev/sda1",
+	            "Ebs" : { "VolumeSize" : "60",
+	                      "VolumeType":"gp2"}
+	           }
+	          ]  
+      }
+    }
+  }
+  }
