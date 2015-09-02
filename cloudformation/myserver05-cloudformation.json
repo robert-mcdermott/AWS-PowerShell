@@ -1,54 +1,135 @@
 {
-  "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "myserver05",
-  "Resources" : {
-    "WebServer": {
-      "Type": "AWS::EC2::Instance",  
-      "Properties": {
-      
-        "Tags" : [
-            {"Key" : "Name", "Value" : "myserver05"},
-            {"Key" : "owner", "Value" : "_adm/solarch"},
-            {"Key" : "technical_contact", "Value" : "rmcdermo@fredhutch.org"},
-            {"Key" : "billing_contact", "Value" : "cloudops@fredhutch.org"},
-            {"Key" : "description", "Value" : "Demo Windows 2012R2 IIS Webserver"},
-            {"Key" : "sle", "Value" : "business_hours=8x5 / phi=no / pii=no / grant_critical=no / publicly_accessible=no"}
-        ],
-        "ImageId"            : "ami-4dbcb67d",
-        "InstanceType"       : "t2.small",
-        "KeyName"            : "rmcdermo-fredhutch_key",
-        "NetworkInterfaces" : [{
-          "AssociatePublicIpAddress" : "false",
-          "DeviceIndex"              : "0",
-          "DeleteOnTermination"      : "true",
-          "SubnetId"                 : "subnet-ae8555d9",
-          "GroupSet"                 : [ "sg-9e3a7cfb" ]
-        }],
-        "BlockDeviceMappings" : [{
-	            "DeviceName" : "/dev/sda1",
-	            "Ebs" : { "VolumeSize" : "60",
-	                      "VolumeType":"gp2"}
-	           },{
-	            "DeviceName" : "/dev/xvdf",
-	            "Ebs" : { "VolumeSize" : "50",
-	                      "VolumeType":"gp2"}
-	          }]  
-      }
-    },
-    "DNSRecords" : {
-      "Type" : "AWS::Route53::RecordSetGroup",
-      "Properties" : {
-        "HostedZoneName" : "fredhutch.center.",
-        "Comment" : "Domain records for my test server.",
-        "RecordSets" : [ 
-          {
-            "Name" : "myserver05.fredhutch.center.",
-            "Type" : "A",
-            "TTL" : "60",
-            "ResourceRecords" : [ { "Fn::GetAtt" : [ "WebServer", "PrivateIp" ]} ]
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "myserver05",
+    "Resources": {
+
+        "WebSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": "vpc-f3e23496",
+                "GroupDescription": "Enable HTTP access to our webserver",
+                "SecurityGroupIngress": [ { "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "CidrIp": "0.0.0.0/0" },
+                                          { "IpProtocol": "tcp", "FromPort": 3389, "ToPort": 3389, "CidrIp": "140.107.0.0/16" }
+                                     
+                ]
+            }
+        },
+
+        "WebServer": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+
+                "Tags": [
+                    {"Key" : "Name", "Value" : "myserver05"},
+                    {"Key" : "owner", "Value" : "_adm/solarch"},
+                    {"Key" : "technical_contact", "Value" : "rmcdermo@fredhutch.org"},
+                    {"Key" : "billing_contact", "Value" : "cloudops@fredhutch.org"},
+                    {"Key" : "description", "Value" : "Demo Windows 2012R2 IIS Webserver"},
+                    {"Key" : "sle", "Value" : "business_hours=8x5 / phi=no / pii=no / grant_critical=no / publicly_accessible=no"}
+                ],
+                "ImageId": "ami-4dbcb67d",
+                "InstanceType": "t2.medium",
+                "KeyName": "rmcdermo-fredhutch_key",
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": "subnet-ae8555d9",
+                        "GroupSet": [ { "Ref": "WebSecurityGroup" } ]
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "60",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "false"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/xvdf",
+                        "Ebs": {
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "false"
+                        }
+                    }
+                ],
+
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "<powershell>\n",
+                                "Add-WindowsFeature web-webserver -includeallsubfeature -logpath $env:temp\\webserver_addrole.log \n",
+                                "Add-WindowsFeature web-mgmt-tools -includeallsubfeature -logpath $env:temp\\mgmttools_addrole.log \n",
+                                "New-Item c:\\inetpub\\myapp -type directory \n",
+                                "Set-Content -Path c:\\inetpub\\myapp\\index.html  \"<!DOCTYPE html><html><body bgcolor='#66CCFF'><h1 style='text-align: center;'><strong>Welcome to the world of Infrastructure as Code</strong></h1><h2><p style='text-align: center;'><strong>This is the future of IT</strong></p></h2></body></html>\" \n",
+                                "New-Website -name Test -port 80 -physicalpath c:\\inetpub\\myapp -ApplicationPool \".NET v4.5\" -force \n",
+                                "Remove-Website -name \"Default Web Site\" \n",
+                                "Start-Website -name myapp \n",
+                                "$ComputerName = $env:COMPUTERNAME \n",
+                                "$user = [adsi]\"WinNT://$ComputerName/Administrator,user\" \n",
+                                "$user.setpassword(\"Password123\") \n",
+                                "Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False -Confirm:$false \n",
+                                "$LegalNotice = \"***  Warning  *** This system is for the exclusive use of authorized Fred Hutchinson Cancer Research Center employees and associates. Anyone using this system without authority, or in excess of their authority, is subject to having all of their activities on this system monitored and recorded by system administration staff. In the course of monitoring individuals improperly using this system, or in the course of system maintenance, the activities of authorized users may also be monitored. Anyone using this system expressly consents to such monitoring and is advised that if such monitoring reveals possible evidence of criminal activity, system administration staff may provide the evidence from such monitoring to law enforcement officials XXX.\" \n",
+                                "[string]$reg = \"HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" \n",
+                                "Set-ItemProperty -Path $reg -Name disablecad -Value 00000000 -Type DWORD -Force \n",
+                                "Set-ItemProperty -Path $reg -Name dontdisplaylastusername -Value 00000001 -Type DWORD -Force \n",
+                                "Set-ItemProperty -Path $reg -Name shutdownwithoutlogon -Value 00000000 -Type DWORD -Force \n",
+                                "Set-ItemProperty -Path $reg -Name legalnoticecaption -Type STRING -Value \"FHCRC Network Access Warning\"  -Force \n",
+                                "Set-ItemProperty -Path $reg -Name legalnoticetext -Type STRING -Value $LegalNotice -Force \n",
+                                "Rename-Computer -NewName myserver05 -Force \n",
+                                "Restart-Computer -Force \n",
+                                "</powershell>"
+                            ]
+                        ]
+                    }
+
+                }
+
+            }
+        },
+
+
+        "CPUAlarm": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if CPU greater than 90 for 5min",
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization",
+                "Dimensions" : [{
+                    "Name" : "InstanceId",
+                    "Value" : { "Ref" : "WebServer" } 
+                 }],
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "1",
+                "Threshold": "90",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": ["arn:aws:sns:us-west-2:458818213009:US-WEST-2_EC2"],
+                "InsufficientDataActions": ["arn:aws:sns:us-west-2:458818213009:US-WEST-2_EC2"]
           }
-        ]
-      }
+    },
+
+
+        "DNSRecords": {
+            "Type": "AWS::Route53::RecordSetGroup",
+            "Properties": {
+                "HostedZoneName": "fredhutch.center.",
+                "Comment": "Domain records for my test server.",
+                "RecordSets": [
+                    {
+                        "Name": "myserver05.fredhutch.center.",
+                        "Type": "A",
+                        "TTL": "60",
+                        "ResourceRecords": [ { "Fn::GetAtt": [ "WebServer", "PrivateIp" ] } ]
+                    }
+                ]
+            }
+        }
     }
-  }
   }
