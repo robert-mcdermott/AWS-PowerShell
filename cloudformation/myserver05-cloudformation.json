@@ -52,7 +52,7 @@
                     {
                         "DeviceName": "/dev/xvdf",
                         "Ebs": {
-                            "VolumeSize": "100",
+                            "VolumeSize": "50",
                             "VolumeType": "gp2",
                             "DeleteOnTermination": "false"
                         }
