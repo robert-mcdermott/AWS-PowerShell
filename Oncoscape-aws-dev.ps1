@@ -5,7 +5,7 @@ Param(
     [string]$AZaSubId = 'subnet-64dc8213',
     [string]$AZbSubId = 'subnet-3188b054',
     [string]$EnvName = 'oncoscape-dev',
-    [string]$InstanceType = 't2.medium',
+    [string]$InstanceType = 't2.large',
     [string]$RootVolSize = "100",
     [string]$RootVolType = "gp2",
     [string]$RootVolDelOnTerminate = "true",
@@ -101,7 +101,7 @@ $HostRule5.ToPort = 2375
 $HostRule5.IpRanges = $Public
 
 # Add rules to host SG
-Grant-EC2SecurityGroupIngress -Region $Region -GroupId $HostSGID -IpPermissions $HostRule1, $HostRule2, $HostRule3, $HostRule4
+Grant-EC2SecurityGroupIngress -Region $Region -GroupId $HostSGID -IpPermissions $HostRule1, $HostRule2, $HostRule3, $HostRule4, $HostRule5
 Start-sleep -Seconds 5
 
 # Tag the Host SG
