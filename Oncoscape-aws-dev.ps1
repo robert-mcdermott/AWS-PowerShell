@@ -29,18 +29,26 @@ Write-Host "Creating $EnvName ELB Security Group and Rules (Firewall)"
 $hush = New-EC2SecurityGroup -Region $Region -Description "Oncoscape ELB SG" -GroupName "${EnvName}_elb_sg" -VpcId $VPCID
 $ElbSG = Get-EC2SecurityGroup -Region $Region |Where-Object {$_.GroupName -eq "${EnvName}_elb_sg"}
 $ElbSGID = $ElbSG.GroupId
+
+# Allow HTTP from $Public
 $ElbRule1 = New-Object Amazon.EC2.Model.IpPermission
 $ElbRule1.IpProtocol='tcp'
 $ElbRule1.FromPort = 80
 $ElbRule1.ToPort = 80
 $ElbRule1.IpRanges = $Public
+
+# Allow HTTPS from $Public
 $ElbRule2 = New-Object Amazon.EC2.Model.IpPermission
 $ElbRule2.IpProtocol='tcp'
 $ElbRule2.FromPort = 443
 $ElbRule2.ToPort = 443
 $ElbRule2.IpRanges = $Public
+
+# Add rules to ELB SG
 Grant-EC2SecurityGroupIngress -Region $Region -GroupId $ElbSGID -IpPermissions $ElbRule1, $ElbRule2
 Start-sleep -Seconds 5
+
+# Tag the ELB SG
 $NameTag = New-Object Amazon.EC2.Model.Tag
 $NameTag.Key = "Name"
 $NameTag.Value = "$EnvName ELB SG"
@@ -52,12 +60,15 @@ Write-Host "Creating $EnvName Host Security Group and Rules (Firewall)"
 $hush = New-EC2SecurityGroup -Region $Region -Description "Oncoscape Host SG" -GroupName "${EnvName}_host_sg" -VpcId $VPCID
 $HostSG = Get-EC2SecurityGroup -Region $Region |Where-Object {$_.GroupName -eq "${EnvName}_host_sg"}
 $HostSGID = $HostSG.GroupId
+
+# Allow all from $Center
 $HostRule1 = New-Object Amazon.EC2.Model.IpPermission
 $HostRule1.IpProtocol='-1'
 $HostRule1.FromPort = 0
 $HostRule1.ToPort = 65535
 $HostRule1.IpRanges = $Center
 
+# Allow HTTP from ELBs ($ElbGrp)
 $ElbGrp = New-Object Amazon.EC2.Model.UserIdGroupPair
 $ElbGrp.GroupId = $ElbSGID
 $HostRule2 = New-Object Amazon.EC2.Model.IpPermission
@@ -65,6 +76,8 @@ $HostRule2.IpProtocol='tcp'
 $HostRule2.FromPort = 80
 $HostRule2.ToPort = 80
 $HostRule2.UserIdGroupPair = $ElbGrp
+
+# Allow all from other Oncoscape hosts ($HostGrp)
 $HostGrp = New-Object Amazon.EC2.Model.UserIdGroupPair
 $HostGrp.GroupId = $HostSGID
 $HostRule3 = New-Object Amazon.EC2.Model.IpPermission
@@ -72,13 +85,26 @@ $HostRule3.IpProtocol='-1'
 $HostRule3.FromPort = 0
 $HostRule3.ToPort = 65535
 $HostRule3.UserIdGroupPair = $HostGrp
+
+# Allow HTTPS from ELBs ($ElbGrp)
 $HostRule4 = New-Object Amazon.EC2.Model.IpPermission
 $HostRule4.IpProtocol='tcp'
 $HostRule4.FromPort = 443
 $HostRule4.ToPort = 443
 $HostRule4.UserIdGroupPair = $ElbGrp
+
+# Allow Tutum agent traffic
+$HostRule5 = New-Object Amazon.EC2.Model.IpPermission
+$HostRule5.IpProtocol='tcp'
+$HostRule5.FromPort = 2375
+$HostRule5.ToPort = 2375
+$HostRule5.IpRanges = $Public
+
+# Add rules to host SG
 Grant-EC2SecurityGroupIngress -Region $Region -GroupId $HostSGID -IpPermissions $HostRule1, $HostRule2, $HostRule3, $HostRule4
 Start-sleep -Seconds 5
+
+# Tag the Host SG
 $NameTag = New-Object Amazon.EC2.Model.Tag
 $NameTag.Key = "Name"
 $NameTag.Value = "$EnvName Host SG"
@@ -111,7 +137,6 @@ $ImageID = Get-EC2Image -Region $Region|
     Sort-Object -Property CreationDate -Descending|
     Select-Object -First 1 -ExpandProperty ImageID
 Write-Host "Selected Ubuntu 14.04 AMI: $ImageID"
-
 
 
 # Creating first Oncoscape Host
@@ -293,13 +318,13 @@ $hush = Set-ELBHealthCheck -Region $Region -LoadBalancerName "$EnvName-elb" -Hea
 Start-Sleep -Seconds 30
 $hush = Register-ELBInstanceWithLoadBalancer -Region $Region -LoadBalancerName "$EnvName-elb" -Instances $HostIdA, $HostIdB
 
-Write-Host "Registering ELB $ELBdns as CNAME 'dev01' in the 'sttrcancer.io' DNS Zone..."
+Write-Host "Registering ELB $ELBdns as CNAME 'dev01.oncoscape.sttrcancer.io' in the 'sttrcancer.io' DNS Zone..."
 $Zone = "sttrcancer.io."
 $Type = "CNAME"
 $HostedZone = Get-R53HostedZones |Where-Object {$_.Name -eq $Zone}
 
 $ResourceRecordSet = New-Object -TypeName Amazon.Route53.Model.ResourceRecordSet
-$ResourceRecordSet.Name = 'dev01.sttrcancer.io.'
+$ResourceRecordSet.Name = 'dev01.oncoscape.sttrcancer.io.'
 $ResourceRecordSet.Type = $Type
 $ResourceRecordSet.TTL = 10
 $ResourceRecordSet.ResourceRecords.Add($ELBdns)
@@ -315,7 +340,7 @@ Catch {
         Write-Host "Error registering instance in Route53 DNS:`n$($_.Exception.Message)" -ForegroundColor Red
 }
 
-Write-Host "All Done! The Oncoscape development website will be availible at dev01.sttrcancer.io ($ELBdns) in about 15 minutes" -ForegroundColor Green
+Write-Host "All Done! The Oncoscape development website will be availible at dev01.oncoscape.sttrcancer.io ($ELBdns) in about 15 minutes" -ForegroundColor Green
 
 # Send a SMS message to Robert's iPhone
 $Message = "$EnvName AWS build complete"
